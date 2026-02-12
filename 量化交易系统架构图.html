@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>量化交易系统架构</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0e27; color: #e0e0e0; min-height: 100vh; padding: 20px; }
+    
+    h1 { text-align: center; font-size: 28px; margin-bottom: 8px; background: linear-gradient(135deg, #00d2ff, #7b2ff7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .subtitle { text-align: center; color: #888; margin-bottom: 30px; font-size: 14px; }
+    
+    .pipeline { display: flex; gap: 12px; margin-bottom: 24px; align-items: stretch; flex-wrap: wrap; justify-content: center; }
+    
+    .module {
+      background: linear-gradient(145deg, #131740, #1a1f4e);
+      border: 1px solid #2a2f6e;
+      border-radius: 16px;
+      padding: 20px;
+      flex: 1;
+      min-width: 220px;
+      max-width: 280px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .module:hover { transform: translateY(-4px); border-color: #4a5fff; box-shadow: 0 8px 32px rgba(74, 95, 255, 0.2); }
+    
+    .module-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .module-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .module-title { font-size: 16px; font-weight: 700; color: #fff; }
+    .module-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    
+    .tech-list { list-style: none; }
+    .tech-list li { padding: 6px 0; font-size: 13px; color: #b0b8d0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: flex-start; gap: 8px; }
+    .tech-list li:last-child { border: none; }
+    .tech-list .dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+    
+    .arrow-container { display: flex; align-items: center; justify-content: center; min-width: 30px; }
+    .arrow { color: #4a5fff; font-size: 24px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    
+    /* Color themes */
+    .c1 .module-icon { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+    .c1 .module-tag { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+    .c1 .dot { background: #ff6b6b; }
+    
+    .c2 .module-icon { background: linear-gradient(135deg, #ffa502, #ff6348); }
+    .c2 .module-tag { background: rgba(255,165,2,0.15); color: #ffa502; }
+    .c2 .dot { background: #ffa502; }
+    
+    .c3 .module-icon { background: linear-gradient(135deg, #7bed9f, #2ed573); }
+    .c3 .module-tag { background: rgba(46,213,115,0.15); color: #2ed573; }
+    .c3 .dot { background: #2ed573; }
+    
+    .c4 .module-icon { background: linear-gradient(135deg, #70a1ff, #1e90ff); }
+    .c4 .module-tag { background: rgba(30,144,255,0.15); color: #70a1ff; }
+    .c4 .dot { background: #70a1ff; }
+    
+    .c5 .module-icon { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+    .c5 .module-tag { background: rgba(108,92,231,0.15); color: #a29bfe; }
+    .c5 .dot { background: #a29bfe; }
+    
+    /* Bottom section */
+    .infra-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+    .infra-card {
+      background: linear-gradient(145deg, #0d1130, #151a45);
+      border: 1px solid #1e2460;
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .infra-card h3 { font-size: 14px; color: #8892b0; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .infra-item { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
+    .infra-item .label { color: #6b7394; }
+    .infra-item .value { color: #ccd6f6; font-weight: 600; }
+    
+    .risk-bar { height: 6px; background: #1a1f4e; border-radius: 3px; margin-top: 4px; overflow: hidden; }
+    .risk-fill { height: 100%; border-radius: 3px; }
+    
+    .flow-label { text-align: center; font-size: 11px; color: #4a5fff; font-weight: 600; letter-spacing: 2px; margin-bottom: 16px; }
+    
+    .kpi-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+    .kpi { background: linear-gradient(145deg, #131740, #1a1f4e); border: 1px solid #2a2f6e; border-radius: 12px; padding: 14px 24px; text-align: center; min-width: 140px; }
+    .kpi .num { font-size: 22px; font-weight: 800; }
+    .kpi .desc { font-size: 11px; color: #6b7394; margin-top: 2px; }
+    
+    .section-title { font-size: 18px; font-weight: 700; color: #fff; margin: 28px 0 14px; padding-left: 12px; border-left: 3px solid #4a5fff; }
+  </style>
+</head>
+<body>
+  <h1>⚡ 全链路量化交易系统</h1>
+  <p class="subtitle">Level-2 Data → Feature Engine → GPU Model → QMT Execution → Risk Control</p>
+  
+  <div class="kpi-row">
+    <div class="kpi"><div class="num" style="color:#ff6b6b">L2</div><div class="desc">逐笔委托/成交</div></div>
+    <div class="kpi"><div class="num" style="color:#ffa502">500+</div><div class="desc">因子特征数</div></div>
+    <div class="kpi"><div class="num" style="color:#2ed573">GPU</div><div class="desc">模型推理加速</div></div>
+    <div class="kpi"><div class="num" style="color:#70a1ff">QMT</div><div class="desc">程序化交易</div></div>
+    <div class="kpi"><div class="num" style="color:#a29bfe">100万</div><div class="desc">资金规模</div></div>
+  </div>
+  
+  <div class="flow-label">▼ 核 心 数 据 流 水 线 ▼</div>
+  
+  <div class="pipeline">
+    <div class="module c1">
+      <div class="module-header">
+        <div class="module-icon">📡</div>
+        <div>
+          <div class="module-title">数据采集层</div>
+          <span class="module-tag">DATA INGESTION</span>
+        </div>
+      </div>
+      <ul class="tech-list">
+        <li><span class="dot"></span>Level-2 逐笔委托/成交</li>
+        <li><span class="dot"></span>十档盘口快照 (3s)</li>
+        <li><span class="dot"></span>委托队列数据</li>
+        <li><span class="dot"></span>ClickHouse 时序存储</li>
+        <li><span class="dot"></span>Redis 实时缓存层</li>
+        <li><span class="dot"></span>日增量 ~50GB 压缩</li>
+      </ul>
+    </div>
+    
+    <div class="arrow-container"><span class="arrow">→</span></div>
+    
+    <div class="module c2">
+      <div class="module-header">
+        <div class="module-icon">⚙️</div>
+        <div>
+          <div class="module-title">因子工程层</div>
+          <span class="module-tag">FEATURE ENGINE</span>
+        </div>
+      </div>
+      <ul class="tech-list">
+        <li><span class="dot"></span>高频微观结构因子</li>
+        <li><span class="dot"></span>订单流不平衡 (OFI)</li>
+        <li><span class="dot"></span>VPIN / 知情交易概率</li>
+        <li><span class="dot"></span>波动率锥 & 已实现波动</li>
+        <li><span class="dot"></span>资金流向多级别分析</li>
+        <li><span class="dot"></span>因子 IC/IR 实时监控</li>
+      </ul>
+    </div>
+    
+    <div class="arrow-container"><span class="arrow">→</span></div>
+    
+    <div class="module c3">
+      <div class="module-header">
+        <div class="module-icon">🧠</div>
+        <div>
+          <div class="module-title">模型决策层</div>
+          <span class="module-tag">GPU INFERENCE</span>
+        </div>
+      </div>
+      <ul class="tech-list">
+        <li><span class="dot"></span>LightGBM 基线模型</li>
+        <li><span class="dot"></span>Transformer 时序模型</li>
+        <li><span class="dot"></span>多任务学习 (收益+波动)</li>
+        <li><span class="dot"></span>在线增量学习</li>
+        <li><span class="dot"></span>模型集成 & 自适应权重</li>
+        <li><span class="dot"></span>GPU 推理 < 5ms</li>
+      </ul>
+    </div>
+    
+    <div class="arrow-container"><span class="arrow">→</span></div>
+    
+    <div class="module c4">
+      <div class="module-header">
+        <div class="module-icon">🎯</div>
+        <div>
+          <div class="module-title">交易执行层</div>
+          <span class="module-tag">QMT EXECUTION</span>
+        </div>
+      </div>
+      <ul class="tech-list">
+        <li><span class="dot"></span>QMT MiniQMT 接口</li>
+        <li><span class="dot"></span>TWAP/VWAP 算法拆单</li>
+        <li><span class="dot"></span>智能路由 & 滑点控制</li>
+        <li><span class="dot"></span>仓位管理 & 组合优化</li>
+        <li><span class="dot"></span>异步订单状态机</li>
+        <li><span class="dot"></span>成交回报实时推送</li>
+      </ul>
+    </div>
+    
+    <div class="arrow-container"><span class="arrow">→</span></div>
+    
+    <div class="module c5">
+      <div class="module-header">
+        <div class="module-icon">🛡️</div>
+        <div>
+          <div class="module-title">风控监控层</div>
+          <span class="module-tag">RISK & MONITOR</span>
+        </div>
+      </div>
+      <ul class="tech-list">
+        <li><span class="dot"></span>盘前/盘中/盘后三级风控</li>
+        <li><span class="dot"></span>单票仓位 ≤ 10%</li>
+        <li><span class="dot"></span>日最大回撤 ≤ 2%</li>
+        <li><span class="dot"></span>异常交易熔断机制</li>
+        <li><span class="dot"></span>Grafana 实时仪表盘</li>
+        <li><span class="dot"></span>微信/钉钉告警推送</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="section-title">基础设施 & 关键参数</div>
+  
+  <div class="infra-section">
+    <div class="infra-card">
+      <h3>🖥️ 服务器配置</h3>
+      <div class="infra-item"><span class="label">CPU</span><span class="value">Intel i9 / AMD 5950X+</span></div>
+      <div class="infra-item"><span class="label">内存</span><span class="value">64GB+ DDR4/DDR5</span></div>
+      <div class="infra-item"><span class="label">GPU</span><span class="value">RTX 3090 / 4090 24GB</span></div>
+      <div class="infra-item"><span class="label">存储</span><span class="value">2TB NVMe + 8TB HDD</span></div>
+      <div class="infra-item"><span class="label">网络</span><span class="value">券商专线 / 低延迟VPN</span></div>
+    </div>
+    
+    <div class="infra-card">
+      <h3>📊 技术栈</h3>
+      <div class="infra-item"><span class="label">语言</span><span class="value">Python 3.10+ / C++</span></div>
+      <div class="infra-item"><span class="label">时序DB</span><span class="value">ClickHouse / DolphinDB</span></div>
+      <div class="infra-item"><span class="label">缓存</span><span class="value">Redis 7.x</span></div>
+      <div class="infra-item"><span class="label">消息队列</span><span class="value">ZeroMQ / Redis Stream</span></div>
+      <div class="infra-item"><span class="label">调度</span><span class="value">APScheduler / Celery</span></div>
+    </div>
+    
+    <div class="infra-card">
+      <h3>🛡️ 风控参数 (100万规模)</h3>
+      <div class="infra-item"><span class="label">单票上限</span><span class="value">≤ 10万 (10%)</span></div>
+      <div class="risk-bar"><div class="risk-fill" style="width:10%;background:linear-gradient(90deg,#2ed573,#7bed9f)"></div></div>
+      <div class="infra-item"><span class="label">持仓数量</span><span class="value">10-20 只</span></div>
+      <div class="risk-bar"><div class="risk-fill" style="width:40%;background:linear-gradient(90deg,#ffa502,#ff6348)"></div></div>
+      <div class="infra-item"><span class="label">日回撤限制</span><span class="value">≤ 2万 (2%)</span></div>
+      <div class="risk-bar"><div class="risk-fill" style="width:20%;background:linear-gradient(90deg,#ff6b6b,#ee5a24)"></div></div>
+      <div class="infra-item"><span class="label">总回撤限制</span><span class="value">≤ 8万 (8%)</span></div>
+      <div class="risk-bar"><div class="risk-fill" style="width:80%;background:linear-gradient(90deg,#ff4757,#c0392b)"></div></div>
+    </div>
+    
+    <div class="infra-card">
+      <h3>⏱️ 延迟预算</h3>
+      <div class="infra-item"><span class="label">数据接收</span><span class="value">< 1ms</span></div>
+      <div class="infra-item"><span class="label">因子计算</span><span class="value">< 3ms</span></div>
+      <div class="infra-item"><span class="label">模型推理</span><span class="value">< 5ms (GPU)</span></div>
+      <div class="infra-item"><span class="label">下单延迟</span><span class="value">< 10ms (QMT)</span></div>
+      <div class="infra-item"><span class="label">端到端</span><span class="value">< 20ms 总延迟</span></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+quant_system/
+├── config/
+│   ├── settings.yaml          # 全局配置
+│   └── risk_params.yaml       # 风控参数
+├── data/
+│   ├── collector.py           # L2数据采集
+│   ├── storage.py             # ClickHouse存储
+│   └── cache.py               # Redis缓存
+├── factor/
+│   ├── base.py                # 因子基类
+│   ├── microstructure.py      # 微观结构因子
+│   ├── orderflow.py           # 订单流因子
+│   └── manager.py             # 因子管理器
+├── model/
+│   ├── lgb_model.py           # LightGBM模型
+│   ├── transformer_model.py   # Transformer模型
+│   ├── ensemble.py            # 模型集成
+│   └── trainer.py             # GPU训练器
+├── execution/
+│   ├── qmt_api.py             # QMT接口封装
+│   ├── order_manager.py       # 订单管理
+│   └── algo_exec.py           # 算法执行(TWAP/VWAP)
+├── risk/
+│   ├── pre_trade.py           # 盘前风控
+│   ├── realtime.py            # 盘中风控
+│   └── post_trade.py          # 盘后分析
+├── monitor/
+│   ├── dashboard.py           # 监控面板
+│   └── alert.py               # 告警系统
+├── backtest/
+│   ├── engine.py              # 回测引擎
+│   └── analyzer.py            # 绩效分析
+├── main.py                    # 主入口
+└── requirements.txt
+

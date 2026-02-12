@@ -1,0 +1,69 @@
+# ==================== 系统全局配置 ====================
+system:
+  name: "QuantSystem-v1"
+  mode: "production"  # production / backtest / paper
+  log_level: "INFO"
+  timezone: "Asia/Shanghai"
+
+# ==================== Level-2 数据源 ====================
+data:
+  l2_source: "local"  # local / vendor_api
+  snapshot_interval: 3  # 快照间隔(秒)
+  symbols_pool: 300     # 股票池容量
+  
+  clickhouse:
+    host: "127.0.0.1"
+    port: 9000
+    database: "quant_db"
+    user: "default"
+    password: ""
+    
+  redis:
+    host: "127.0.0.1"
+    port: 6379
+    db: 0
+    max_connections: 50
+
+# ==================== 因子工程 ====================
+factor:
+  compute_engine: "numpy"  # numpy / cupy(GPU)
+  update_frequency: "tick"  # tick / 1s / 3s
+  ic_monitor_window: 20    # IC监控滚动窗口(天)
+  
+# ==================== 模型配置 ====================
+model:
+  device: "cuda:0"
+  lgb:
+    num_leaves: 63
+    learning_rate: 0.05
+    n_estimators: 500
+    feature_fraction: 0.8
+  transformer:
+    d_model: 128
+    nhead: 8
+    num_layers: 4
+    seq_len: 60
+    dropout: 0.1
+    batch_size: 256
+  ensemble:
+    method: "adaptive_weight"  # equal / adaptive_weight / stacking
+    retrain_days: 5
+
+# ==================== QMT交易 ====================
+qmt:
+  path: "D:/国金QMT/bin.x64/XtMiniQmt.exe"
+  account: "your_account"
+  account_type: "STOCK"
+  session_id: 123456
+  
+# ==================== 风控参数 ====================
+risk:
+  total_capital: 1000000
+  max_position_pct: 0.10       # 单票最大仓位 10%
+  max_total_position_pct: 0.80 # 总仓位上限 80%
+  max_daily_loss_pct: 0.02     # 日最大亏损 2%
+  max_total_drawdown_pct: 0.08 # 总最大回撤 8%
+  max_order_per_minute: 20     # 每分钟最大下单数
+  min_holding_seconds: 30      # 最短持仓时间
+  stock_count_range: [10, 20]  # 持仓数量范围
+  banned_stocks: []            # 禁止交易列表
