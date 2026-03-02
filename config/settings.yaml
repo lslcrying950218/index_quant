@@ -1,43 +1,64 @@
-# ==================== 系统全局配置 ====================
+# ============================================================
+#  量化交易系统 - 全局配置
+# ============================================================
 system:
-  name: "QuantSystem-v1"
-  mode: "production"  # production / backtest / paper
+  name: "QuantSystem-v1.0"
+  mode: "production"        # production / paper / backtest
   log_level: "INFO"
   timezone: "Asia/Shanghai"
 
-# ==================== Level-2 数据源 ====================
+# ==================== 数据层 ====================
 data:
-  l2_source: "local"  # local / vendor_api
-  snapshot_interval: 3  # 快照间隔(秒)
-  symbols_pool: 300     # 股票池容量
-  
+  l2_source: "local"
+  snapshot_interval: 3
+  symbols_pool: 300
+
   clickhouse:
     host: "127.0.0.1"
     port: 9000
     database: "quant_db"
     user: "default"
     password: ""
-    
+
   redis:
     host: "127.0.0.1"
     port: 6379
     db: 0
     max_connections: 50
 
-# ==================== 因子工程 ====================
+# ==================== 新闻 & NLP ====================
+news:
+  crawl_interval: 60
+  sources: ["eastmoney", "sina", "cninfo"]
+
+nlp:
+  use_model: true
+  model_name: "uer/roberta-base-finetuned-jd-binary-chinese"
+  device: "cuda:0"
+
+# ==================== 计算层 ====================
+stream:
+  tick_buffer_size: 10000
+
+# ==================== 因子 ====================
 factor:
-  compute_engine: "numpy"  # numpy / cupy(GPU)
-  update_frequency: "tick"  # tick / 1s / 3s
-  ic_monitor_window: 20    # IC监控滚动窗口(天)
-  
-# ==================== 模型配置 ====================
+  compute_engine: "numpy"
+  ic_monitor_window: 20
+  min_ic_threshold: 0.02
+  max_correlation: 0.7
+
+# ==================== 模型 ====================
 model:
   device: "cuda:0"
+  model_dir: "models"
+  n_factors: 50
+
   lgb:
     num_leaves: 63
     learning_rate: 0.05
     n_estimators: 500
     feature_fraction: 0.8
+
   transformer:
     d_model: 128
     nhead: 8
@@ -45,25 +66,51 @@ model:
     seq_len: 60
     dropout: 0.1
     batch_size: 256
+
   ensemble:
-    method: "adaptive_weight"  # equal / adaptive_weight / stacking
+    method: "adaptive_weight"
     retrain_days: 5
 
-# ==================== QMT交易 ====================
+# ==================== 决策层 ====================
+rules:
+  rules_dir: "config/rules"
+
+signal:
+  signal_weights:
+    model: 0.50
+    rules: 0.25
+    sentiment: 0.15
+    batch: 0.10
+  buy_threshold: 0.15
+  sell_threshold: -0.15
+  min_confidence: 0.3
+
+# ==================== QMT ====================
 qmt:
   path: "D:/国金QMT/bin.x64/XtMiniQmt.exe"
   account: "your_account"
   account_type: "STOCK"
   session_id: 123456
-  
-# ==================== 风控参数 ====================
+
+# ==================== 风控 ====================
 risk:
   total_capital: 1000000
-  max_position_pct: 0.10       # 单票最大仓位 10%
-  max_total_position_pct: 0.80 # 总仓位上限 80%
-  max_daily_loss_pct: 0.02     # 日最大亏损 2%
-  max_total_drawdown_pct: 0.08 # 总最大回撤 8%
-  max_order_per_minute: 20     # 每分钟最大下单数
-  min_holding_seconds: 30      # 最短持仓时间
-  stock_count_range: [10, 20]  # 持仓数量范围
-  banned_stocks: []            # 禁止交易列表
+  max_position_pct: 0.10
+  max_total_position_pct: 0.80
+  max_daily_loss_pct: 0.02
+  max_total_drawdown_pct: 0.08
+  max_order_per_minute: 20
+  min_holding_seconds: 30
+  stock_count_range: [10, 20]
+  banned_stocks: []
+
+# ==================== 监控 ====================
+monitor:
+  prometheus_port: 9090
+  mode: "production"
+  total_capital: 1000000
+
+# ==================== 告警 ====================
+alert:
+  dingtalk_webhook: ""
+  wechat_webhook: ""

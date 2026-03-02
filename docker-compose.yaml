@@ -1,0 +1,80 @@
+# ============================================================
+#  量化交易系统 - 基础设施编排
+#  启动: docker-compose up -d
+# ============================================================
+version: "3.8"
+
+services:
+  # ==================== ClickHouse ====================
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    container_name: quant-clickhouse
+    ports:
+      - "8123:8123"   # HTTP
+      - "9000:9000"   # Native
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+    environment:
+      CLICKHOUSE_DB: quant_db
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    restart: unless-stopped
+
+  # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    container_name: quant-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --maxmemory 4gb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+    restart: unless-stopped
+
+  # ==================== Prometheus ====================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: quant-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=90d"
+    restart: unless-stopped
+
+  # ==================== Grafana ====================
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: quant-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana:/etc/grafana/provisioning
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: quant2024
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  clickhouse_data:
+  clickhouse_logs:
+  redis_data:
+  prometheus_data:
+  grafana_data:

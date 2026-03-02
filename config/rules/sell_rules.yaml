@@ -1,0 +1,79 @@
+rules:
+  # ============ 卖出规则 ============
+  - id: "sell_001"
+    name: "止损卖出"
+    description: "持仓亏损超阈值"
+    action: "sell"
+    priority: 100
+    logic: "OR"
+    weight: 2.0
+    cooldown: 0
+    conditions:
+      - field: "position_pnl_pct"
+        operator: "lt"
+        value: -0.05
+        description: "持仓亏损超5%"
+      - field: "position_pnl_pct_today"
+        operator: "lt"
+        value: -0.03
+        description: "日内亏损超3%"
+
+  - id: "sell_002"
+    name: "模型看空卖出"
+    description: "模型预测下跌 + 资金流出"
+    action: "sell"
+    priority: 75
+    logic: "AND"
+    weight: 1.0
+    cooldown: 300
+    conditions:
+      - field: "model_pred_return"
+        operator: "lt"
+        value: -0.003
+        description: "模型预测收益 < -0.3%"
+      - field: "net_buy_ratio"
+        operator: "lt"
+        value: -0.1
+        description: "净卖出比例 > 10%"
+
+  - id: "sell_003"
+    name: "利空新闻卖出"
+    description: "重大利空事件紧急卖出"
+    action: "sell"
+    priority: 95
+    logic: "AND"
+    weight: 1.5
+    cooldown: 0
+    conditions:
+      - field: "news_event_type"
+        operator: "in"
+        value: ["major_negative", "warning"]
+        description: "重大利空或风险警示"
+
+  # ============ 禁止交易规则 ============
+  - id: "block_001"
+    name: "涨跌停禁止交易"
+    action: "block"
+    priority: 200
+    logic: "OR"
+    weight: 0
+    conditions:
+      - field: "is_limit_up"
+        operator: "eq"
+        value: true
+        description: "涨停"
+      - field: "is_limit_down"
+        operator: "eq"
+        value: true
+        description: "跌停"
+
+  - id: "block_002"
+    name: "低流动性禁止"
+    action: "block"
+    priority: 190
+    logic: "AND"
+    conditions:
+      - field: "bid_ask_spread"
+        operator: "gt"
+        value: 0.01
+        description: "买卖价差 > 1%"

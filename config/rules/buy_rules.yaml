@@ -1,0 +1,72 @@
+rules:
+  # ============ 买入规则 ============
+  - id: "buy_001"
+    name: "强势突破买入"
+    description: "模型看多 + 资金流入 + 动量向上"
+    action: "buy"
+    priority: 80
+    logic: "AND"
+    weight: 1.2
+    cooldown: 300
+    valid_time: ["09:35", "14:50"]
+    conditions:
+      - field: "model_pred_return"
+        operator: "gt"
+        value: 0.005
+        description: "模型预测收益 > 0.5%"
+      - field: "net_buy_ratio"
+        operator: "gt"
+        value: 0.15
+        description: "净主动买入比例 > 15%"
+      - field: "tick_momentum_100"
+        operator: "gt"
+        value: 0.001
+        description: "短期动量为正"
+      - field: "depth_imbalance_5"
+        operator: "gt"
+        value: 0.1
+        description: "盘口买方力量偏强"
+
+  - id: "buy_002"
+    name: "情感利好买入"
+    description: "重大利好新闻 + 模型不看空"
+    action: "buy"
+    priority: 70
+    logic: "AND"
+    weight: 0.8
+    cooldown: 600
+    conditions:
+      - field: "news_sentiment_score"
+        operator: "gt"
+        value: 0.5
+        description: "新闻情感强烈正面"
+      - field: "news_event_type"
+        operator: "eq"
+        value: "major_positive"
+        description: "重大利好事件"
+      - field: "model_pred_return"
+        operator: "gt"
+        value: -0.002
+        description: "模型不看空"
+
+  - id: "buy_003"
+    name: "超跌反弹买入"
+    description: "短期超跌 + 资金抄底"
+    action: "buy"
+    priority: 60
+    logic: "AND"
+    weight: 0.7
+    cooldown: 600
+    conditions:
+      - field: "ret_5d"
+        operator: "lt"
+        value: -0.08
+        description: "5日跌幅超8%"
+      - field: "rsi_14"
+        operator: "lt"
+        value: 25
+        description: "RSI超卖"
+      - field: "smart_money_flow"
+        operator: "gt"
+        value: 0.1
+        description: "聪明资金流入"
